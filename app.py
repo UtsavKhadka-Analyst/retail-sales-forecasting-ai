@@ -15,14 +15,14 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. ULTRA-MODERN CSS (ANIMATED)
+# 2. ULTRA-MODERN CSS (FIXED & IMPROVED)
 # ==========================================
 st.markdown("""
     <style>
     /* IMPORT FONTS */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-    /* ANIMATED BACKGROUND */
+    /* ANIMATED BACKGROUND (Main App) */
     .stApp {
         background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
         background-size: 400% 400%;
@@ -36,80 +36,109 @@ st.markdown("""
         100% { background-position: 0% 50%; }
     }
 
-    /* HEADER "CHECKBOX" STYLE CARDS */
+    /* SIDEBAR STYLING (New!) */
+    [data-testid="stSidebar"] {
+        background: rgba(255, 255, 255, 0.85); /* Semi-transparent white */
+        backdrop-filter: blur(12px); /* Glass blur effect */
+        border-right: 1px solid rgba(255,255,255,0.5);
+    }
+    
+    /* SIDEBAR TEXT & INPUTS */
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        color: #1e3c72;
+    }
+    
+    /* HEADER CARDS (Fixed Width & Centered) */
+    .header-container {
+        display: flex;
+        justify_content: center;
+        margin-bottom: 20px;
+    }
+    
     .header-card {
         background: rgba(255, 255, 255, 0.9);
         backdrop-filter: blur(10px);
-        padding: 20px 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        border-left: 6px solid #1e3c72;
+        padding: 20px 40px;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        text-align: center;
+        width: auto; /* Fits text */
+        display: inline-block; /* Fits text */
     }
     
     .header-title {
         color: #1e3c72;
         font-weight: 800;
-        font-size: 28px;
+        font-size: 32px;
         margin: 0;
+        background: -webkit-linear-gradient(#1e3c72, #2a5298);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     
     .header-subtitle {
         color: #555;
         font-size: 14px;
         margin-top: 5px;
+        font-weight: 500;
     }
 
-    /* INTERACTIVE METRIC CARDS */
+    /* KPI CARDS (Interactive) */
     .kpi-card {
-        background: rgba(255, 255, 255, 0.95);
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
         border-radius: 15px;
         padding: 20px;
         text-align: center;
-        transition: all 0.3s ease;
-        border: 1px solid rgba(255,255,255,0.3);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.5);
     }
     
     .kpi-card:hover {
-        transform: translateY(-10px) scale(1.02);
-        box-shadow: 0 20px 30px rgba(0,0,0,0.2);
-        border: 1px solid #23a6d5;
+        transform: translateY(-8px);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+        border-color: #e73c7e;
     }
     
     .kpi-value {
-        font-size: 36px;
+        font-size: 32px;
         font-weight: 800;
         color: #1e3c72;
-        margin: 10px 0;
     }
     
     .kpi-label {
-        font-size: 13px;
+        font-size: 12px;
         color: #666;
         text-transform: uppercase;
         letter-spacing: 1px;
+        margin-bottom: 5px;
     }
-
+    
     /* CUSTOM TABS */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background-color: rgba(255,255,255,0.5);
-        padding: 10px;
-        border-radius: 15px;
+        gap: 8px;
+        background-color: rgba(255,255,255,0.6);
+        padding: 8px;
+        border-radius: 12px;
+        backdrop-filter: blur(5px);
     }
+    
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        background-color: rgba(255,255,255,0.8);
+        height: 45px;
+        background-color: transparent;
         border-radius: 8px;
-        border: none;
-        color: #495057;
+        color: #1e3c72;
         font-weight: 600;
+        flex: 1; /* Tabs stretch evenly */
     }
+    
     .stTabs [aria-selected="true"] {
         background-color: #1e3c72 !important;
         color: white !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
+
     </style>
     """, unsafe_allow_html=True)
 
@@ -141,7 +170,8 @@ def load_uploaded_data(up_f, up_a, up_s):
 # 4. SIDEBAR CONFIGURATION
 # ==========================================
 with st.sidebar:
-    st.markdown("## ⚙️ Control Panel")
+    st.image("https://cdn-icons-png.flaticon.com/512/3081/3081559.png", width=60)
+    st.markdown("### Control Panel")
     
     # Styled Toggle
     data_source = st.selectbox(
@@ -152,7 +182,14 @@ with st.sidebar:
     st.markdown("---")
     api_key = st.text_input("🔑 OpenAI API Key", type="password")
     
-    st.info("System Status: 🟢 Online")
+    st.markdown("---")
+    with st.container():
+        st.markdown("""
+        <div style="background: rgba(30, 60, 114, 0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(30, 60, 114, 0.2);">
+            <small style="color: #1e3c72;"><b>System Status:</b> 🟢 Online</small><br>
+            <small style="color: #555;">v2.1 Enterprise Build</small>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================
 # 5. DATA LOADING
@@ -182,11 +219,13 @@ anomalies_df['Date'] = pd.to_datetime(anomalies_df['Date'])
 # 6. MAIN INTERFACE
 # ==========================================
 
-# HEADER WITH "CHECKBOX" CARD STYLE
+# HEADER (CENTERED & FITTED)
 st.markdown("""
-<div class="header-card">
-    <h1 class="header-title">🛍️ Retail AI Analyst Pro</h1>
-    <p class="header-subtitle">Advanced Hybrid Forecasting • Prophet + LSTM • Anomaly Detection</p>
+<div class="header-container">
+    <div class="header-card">
+        <h1 class="header-title">🛍️ Retail AI Analyst</h1>
+        <p class="header-subtitle">Hybrid Forecasting Architecture (Prophet + LSTM)</p>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -194,7 +233,7 @@ tab_dash, tab_chat, tab_data = st.tabs(["📊 Live Dashboard", "🤖 AI Consulta
 
 # --- TAB 1: EXECUTIVE DASHBOARD ---
 with tab_dash:
-    # KPI CARDS (Interactive HTML)
+    # KPI CARDS
     avg_sales = forecast_df['Hybrid'].mean()
     next_week = forecast_df['Hybrid'].iloc[0]
     total_anoms = len(anomalies_df)
@@ -209,16 +248,16 @@ with tab_dash:
         </div>
         """, unsafe_allow_html=True)
 
-    display_kpi(col1, "Average Projected Sales", f"${avg_sales:,.0f}")
+    display_kpi(col1, "Average Sales", f"${avg_sales:,.0f}")
     display_kpi(col2, "Next Week Forecast", f"${next_week:,.0f}")
-    display_kpi(col3, "Detected Anomalies", str(total_anoms))
+    display_kpi(col3, "Anomalies Detected", str(total_anoms))
     
     st.write("---")
 
-    # MAIN CHART WITH GLASS CONTAINER
-    st.markdown('<div class="header-card"><h3 style="margin:0; color:#1e3c72;">📈 Forecast Trajectory</h3></div>', unsafe_allow_html=True)
+    # CHART
+    st.markdown('<div style="text-align: center; margin-bottom: 20px;"><span style="background: white; padding: 5px 15px; border-radius: 20px; font-weight: 600; color: #1e3c72; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">📈 Sales Trajectory</span></div>', unsafe_allow_html=True)
     
-    view_mode = st.radio("Display Mode:", ["Hybrid View", "Detailed Comparison"], horizontal=True)
+    view_mode = st.radio("Display Mode:", ["Hybrid View", "Detailed Comparison"], horizontal=True, label_visibility="collapsed")
     
     fig = go.Figure()
     
@@ -242,10 +281,12 @@ with tab_dash:
 
     fig.update_layout(
         template="plotly_white",
-        plot_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(255,255,255,0.5)', # Semi-transparent chart bg
         paper_bgcolor='rgba(0,0,0,0)',
         height=500,
-        hovermode="x unified"
+        hovermode="x unified",
+        margin=dict(l=20, r=20, t=30, b=20),
+        legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center")
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -253,7 +294,13 @@ with tab_dash:
 with tab_chat:
     col_c1, col_c2 = st.columns([2, 1])
     with col_c1:
-        st.markdown('<div class="header-card"><h3 style="margin:0;">💬 Ask the Data</h3></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="background: rgba(255,255,255,0.8); padding: 20px; border-radius: 15px;">
+            <h3 style="color: #1e3c72; margin: 0;">💬 AI Business Analyst</h3>
+            <p style="color: #666; font-size: 14px;">Ask questions about your sales data.</p>
+        </div>
+        <br>
+        """, unsafe_allow_html=True)
         
         if not api_key:
             st.warning("🔐 Please enter OpenAI API Key in the sidebar.")
@@ -266,7 +313,7 @@ with tab_chat:
                 if msg["role"] != "system":
                     st.chat_message(msg["role"]).write(msg["content"])
 
-            if prompt := st.chat_input("Ask about sales trends..."):
+            if prompt := st.chat_input("Ex: Why did sales drop in November?"):
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 st.chat_message("user").write(prompt)
                 
@@ -280,11 +327,18 @@ with tab_chat:
 
 # --- TAB 3: DATA EXPORT ---
 with tab_data:
-    st.markdown('<div class="header-card"><h3 style="margin:0;">💾 Download Center</h3></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="header-container">
+        <div class="header-card" style="padding: 15px 30px;">
+            <h3 style="margin:0; color: #1e3c72;">💾 Data Download Center</h3>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     col_d1, col_d2 = st.columns(2)
     with col_d1:
-        st.download_button("📥 Download Forecast CSV", forecast_df.to_csv(), "forecast.csv", "text/csv")
-        st.dataframe(forecast_df.head())
+        st.download_button("📥 Download Forecast CSV", forecast_df.to_csv(), "forecast.csv", "text/csv", use_container_width=True)
+        st.dataframe(forecast_df.head(), use_container_width=True)
     with col_d2:
-        st.download_button("📥 Download Anomalies CSV", anomalies_df.to_csv(), "anomalies.csv", "text/csv")
-        st.dataframe(anomalies_df.head())
+        st.download_button("📥 Download Anomalies CSV", anomalies_df.to_csv(), "anomalies.csv", "text/csv", use_container_width=True)
+        st.dataframe(anomalies_df.head(), use_container_width=True)
