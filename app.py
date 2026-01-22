@@ -246,6 +246,28 @@ st.markdown("""
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
     
+    /* ===== RADIO BUTTONS - Bright Text for Visibility ===== */
+    .stRadio > label {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .stRadio > div {
+        color: #ffffff !important;
+    }
+    
+    .stRadio [role="radiogroup"] label {
+        color: #e3f2fd !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .stRadio [role="radiogroup"] label:hover {
+        color: #ffffff !important;
+    }
+    
     /* ===== INPUT FIELDS - Clear User Interaction ===== */
     .stTextInput > div > div > input,
     .stSelectbox > div > div > div,
@@ -465,11 +487,15 @@ def load_uploaded_data(up_f, up_a, up_s):
 
 def export_to_excel(forecast_df, anomalies_df):
     """Export data to Excel with multiple sheets."""
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        forecast_df.to_excel(writer, sheet_name='Forecasts', index=False)
-        anomalies_df.to_excel(writer, sheet_name='Anomalies', index=False)
-    return output.getvalue()
+    try:
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            forecast_df.to_excel(writer, sheet_name='Forecasts', index=False)
+            anomalies_df.to_excel(writer, sheet_name='Anomalies', index=False)
+        return output.getvalue()
+    except ImportError:
+        # If openpyxl is not available, return None
+        return None
 
 @st.cache_resource
 def get_openai_client(api_key):
@@ -919,15 +945,18 @@ with tab3:
     with col_exp1:
         st.markdown("### 📊 Forecast Data")
         
-        # Export to Excel
+        # Export to Excel (with fallback)
         excel_data = export_to_excel(forecast_df, anomalies_df)
-        st.download_button(
-            label="📥 Download Excel Report",
-            data=excel_data,
-            file_name=f"forecast_report_{datetime.now().strftime('%Y%m%d')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
+        if excel_data:
+            st.download_button(
+                label="📥 Download Excel Report",
+                data=excel_data,
+                file_name=f"forecast_report_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
+        else:
+            st.info("ℹ️ Excel export unavailable. Use CSV export below.")
         
         # Export forecast CSV
         csv_forecast = forecast_df.to_csv(index=False).encode('utf-8')
