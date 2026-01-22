@@ -531,8 +531,7 @@ with st.sidebar:
     show_legend = st.checkbox("Show Legend", value=True)
     
     st.divider()
-    st.caption("🎨 **UX Portfolio Project**")
-    st.caption("Designed for clarity & joy of use")
+    st.caption("💡 **Tip:** Adjust settings for optimal experience")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # DATA LOADING
@@ -721,26 +720,28 @@ with tab1:
             borderwidth=1,
             font=dict(color='#FFFFFF', size=11)
         ),
-        xaxis=dict(
-            title='Date',
-            titlefont=dict(color='#FFFFFF', size=14),
-            tickfont=dict(color='#E3F2FD', size=11),
-            showgrid=show_grid,
-            gridcolor='rgba(255, 255, 255, 0.1)',
-            gridwidth=1,
-            zeroline=False
-        ),
-        yaxis=dict(
-            title='Weekly Sales ($)',
-            titlefont=dict(color='#FFFFFF', size=14),
-            tickfont=dict(color='#E3F2FD', size=11),
-            showgrid=show_grid,
-            gridcolor='rgba(255, 255, 255, 0.1)',
-            gridwidth=1,
-            zeroline=False,
-            tickformat='$,.0f'
-        ),
         margin=dict(l=60, r=40, t=40, b=60)
+    )
+    
+    # Update axes separately
+    fig.update_xaxes(
+        title='Date',
+        title_font=dict(color='#FFFFFF', size=14),
+        tickfont=dict(color='#E3F2FD', size=11),
+        showgrid=show_grid,
+        gridcolor='rgba(255, 255, 255, 0.1)',
+        gridwidth=1,
+        zeroline=False
+    )
+    
+    fig.update_yaxes(
+        title='Weekly Sales ($)',
+        title_font=dict(color='#FFFFFF', size=14),
+        tickfont=dict(color='#E3F2FD', size=11),
+        showgrid=show_grid,
+        gridcolor='rgba(255, 255, 255, 0.1)',
+        gridwidth=1,
+        zeroline=False
     )
     
     st.plotly_chart(fig, use_container_width=True, key="main_chart")
