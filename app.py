@@ -681,3 +681,311 @@ with tab1:
         y=filtered_forecast['Hybrid'],
         name='Hybrid Forecast',
         line=dict(color='#FFFFFF', width=4),
+        fill='tozeroy',
+        fillcolor='rgba(255, 255, 255, 0.1)',
+        hovertemplate='<b>Hybrid Forecast</b><br>Date: %{x}<br>Sales: $%{y:,.0f}<extra></extra>'
+    ))
+    
+    # Add anomalies if selected
+    if view_mode == "With Anomalies" and not filtered_anomalies.empty:
+        fig.add_trace(go.Scatter(
+            x=filtered_anomalies['Date'],
+            y=filtered_anomalies['Weekly_Sales'],
+            mode='markers',
+            name='Anomaly Detected',
+            marker=dict(
+                color='#FF5252',
+                size=14,
+                symbol='x',
+                line=dict(width=2, color='#FFFFFF')
+            ),
+            hovertemplate='<b>⚠️ Anomaly</b><br>Date: %{x}<br>Sales: $%{y:,.0f}<extra></extra>'
+        ))
+    
+    # Chart layout - optimized for dark blue background with high contrast
+    fig.update_layout(
+        template='plotly_dark',
+        plot_bgcolor='rgba(13, 25, 41, 0.8)',
+        paper_bgcolor='rgba(0, 0, 0, 0)',
+        height=550,
+        hovermode='x unified',
+        showlegend=show_legend,
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='right',
+            x=1,
+            bgcolor='rgba(255, 255, 255, 0.1)',
+            bordercolor='rgba(255, 255, 255, 0.2)',
+            borderwidth=1,
+            font=dict(color='#FFFFFF', size=11)
+        ),
+        xaxis=dict(
+            title='Date',
+            titlefont=dict(color='#FFFFFF', size=14),
+            tickfont=dict(color='#E3F2FD', size=11),
+            showgrid=show_grid,
+            gridcolor='rgba(255, 255, 255, 0.1)',
+            gridwidth=1,
+            zeroline=False
+        ),
+        yaxis=dict(
+            title='Weekly Sales ($)',
+            titlefont=dict(color='#FFFFFF', size=14),
+            tickfont=dict(color='#E3F2FD', size=11),
+            showgrid=show_grid,
+            gridcolor='rgba(255, 255, 255, 0.1)',
+            gridwidth=1,
+            zeroline=False,
+            tickformat='$,.0f'
+        ),
+        margin=dict(l=60, r=40, t=40, b=60)
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, key="main_chart")
+    
+    # Download chart
+    col_dl1, col_dl2 = st.columns([3, 1])
+    with col_dl2:
+        try:
+            img_bytes = fig.to_image(format="png", width=1400, height=700)
+            st.download_button(
+                "📸 Download Chart",
+                data=img_bytes,
+                file_name=f"forecast_{datetime.now().strftime('%Y%m%d')}.png",
+                mime="image/png",
+                use_container_width=True
+            )
+        except:
+            st.caption("Install kaleido for chart export: pip install kaleido")
+    
+    st.markdown("---")
+    
+    # Data Tables
+    st.markdown("## 📋 Data Tables")
+    col_t1, col_t2 = st.columns(2)
+    
+    with col_t1:
+        with st.expander("📊 Forecast Data", expanded=False):
+            st.dataframe(
+                filtered_forecast.style.format({
+                    "Prophet": "${:,.2f}",
+                    "LSTM": "${:,.2f}",
+                    "Hybrid": "${:,.2f}"
+                }),
+                use_container_width=True,
+                height=300
+            )
+    
+    with col_t2:
+        with st.expander("⚠️ Anomalies Detected", expanded=False):
+            if not filtered_anomalies.empty:
+                st.dataframe(
+                    filtered_anomalies.style.format({
+                        "Weekly_Sales": "${:,.2f}"
+                    }),
+                    use_container_width=True,
+                    height=300
+                )
+            else:
+                st.info("No anomalies in selected period")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TAB 2: AI ASSISTANT
+# ═══════════════════════════════════════════════════════════════════════════
+
+with tab2:
+    st.markdown("## 💬 AI Business Analyst")
+    
+    col_chat1, col_chat2 = st.columns([2, 1])
+    
+    with col_chat2:
+        st.markdown("### 💡 Sample Questions")
+        st.info("""
+        - "Summarize the forecast trends"
+        - "What caused the anomalies?"
+        - "Compare Prophet vs LSTM"
+        - "What's the sales outlook?"
+        - "Identify seasonal patterns"
+        - "Risk factors to watch?"
+        """)
+        
+        if api_key and "messages" in st.session_state:
+            msg_count = len([m for m in st.session_state.messages if m["role"] != "system"])
+            est_tokens = msg_count * 150
+            est_cost = (est_tokens / 1000) * 0.002
+            
+            st.metric("Messages Sent", msg_count)
+            st.metric("Est. Cost", f"${est_cost:.4f}")
+        
+        if st.button("🔄 Clear Chat", use_container_width=True):
+            if "messages" in st.session_state:
+                st.session_state.messages = [st.session_state.messages[0]]
+                st.success("Chat cleared!")
+                st.rerun()
+    
+    with col_chat1:
+        if not api_key:
+            st.warning("⚠️ Please enter your OpenAI API Key in the sidebar to use the AI assistant.")
+            st.markdown("""
+            **Why do I need an API key?**
+            - Direct communication with OpenAI's GPT models
+            - You control your usage and costs
+            - Secure - no intermediary storage
+            
+            **Get your key:** [OpenAI Platform](https://platform.openai.com/api-keys)
+            """)
+        else:
+            client = get_openai_client(api_key)
+            
+            if not client:
+                st.error("❌ Failed to initialize OpenAI client. Check your API key.")
+            else:
+                # Initialize chat
+                if "messages" not in st.session_state:
+                    system_prompt = f"""You are an expert retail data analyst. Answer questions concisely and professionally.
+
+REPORT CONTEXT:
+{summary_context}
+
+DATA SUMMARY:
+- Forecast Period: {date_range}
+- Average Forecast: ${avg_sales:,.0f}
+- Total Anomalies: {total_anoms}
+- Models Used: Prophet, LSTM, Hybrid Ensemble
+
+Be concise (2-3 paragraphs max), use bullet points when appropriate, and provide actionable insights.
+"""
+                    st.session_state.messages = [{"role": "system", "content": system_prompt}]
+                
+                # Display chat
+                for message in st.session_state.messages:
+                    if message["role"] != "system":
+                        with st.chat_message(message["role"]):
+                            st.markdown(message["content"])
+                
+                # User input
+                if prompt := st.chat_input("Ask about the forecast data..."):
+                    st.session_state.messages.append({"role": "user", "content": prompt})
+                    
+                    with st.chat_message("user"):
+                        st.markdown(prompt)
+                    
+                    # Generate response
+                    with st.chat_message("assistant"):
+                        try:
+                            trimmed_messages = trim_chat_history(
+                                st.session_state.messages,
+                                CONFIG["MAX_CHAT_HISTORY"]
+                            )
+                            
+                            with st.spinner("Analyzing..."):
+                                stream = client.chat.completions.create(
+                                    model=CONFIG["OPENAI_MODEL"],
+                                    messages=[
+                                        {"role": m["role"], "content": m["content"]} 
+                                        for m in trimmed_messages
+                                    ],
+                                    max_tokens=CONFIG["MAX_TOKENS"],
+                                    stream=True,
+                                )
+                                response = st.write_stream(stream)
+                            
+                            st.session_state.messages.append({
+                                "role": "assistant",
+                                "content": response
+                            })
+                        
+                        except Exception as e:
+                            error_msg = str(e)
+                            if "insufficient_quota" in error_msg:
+                                st.error("❌ API quota exceeded. Check your OpenAI billing.")
+                            elif "invalid_api_key" in error_msg:
+                                st.error("❌ Invalid API key. Please check your key.")
+                            else:
+                                st.error(f"❌ Error: {error_msg}")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TAB 3: DATA EXPORT
+# ═══════════════════════════════════════════════════════════════════════════
+
+with tab3:
+    st.markdown("## 📥 Data Export Center")
+    
+    col_exp1, col_exp2 = st.columns(2)
+    
+    with col_exp1:
+        st.markdown("### 📊 Forecast Data")
+        
+        # Export to Excel
+        excel_data = export_to_excel(forecast_df, anomalies_df)
+        st.download_button(
+            label="📥 Download Excel Report",
+            data=excel_data,
+            file_name=f"forecast_report_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+        
+        # Export forecast CSV
+        csv_forecast = forecast_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download Forecast CSV",
+            data=csv_forecast,
+            file_name=f"forecast_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+        
+        st.dataframe(forecast_df.head(10), use_container_width=True)
+    
+    with col_exp2:
+        st.markdown("### ⚠️ Anomaly Data")
+        
+        # Export anomalies CSV
+        csv_anomalies = anomalies_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download Anomalies CSV",
+            data=csv_anomalies,
+            file_name=f"anomalies_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+        
+        st.dataframe(anomalies_df.head(10), use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Data Summary
+    st.markdown("### 📋 Data Summary")
+    col_sum1, col_sum2 = st.columns(2)
+    
+    with col_sum1:
+        st.json({
+            "Total Forecast Points": len(forecast_df),
+            "Date Range": date_range,
+            "Average Forecast": f"${avg_sales:,.2f}",
+            "Models": ["Prophet", "LSTM", "Hybrid"]
+        })
+    
+    with col_sum2:
+        st.json({
+            "Total Anomalies": len(anomalies_df),
+            "Data Source": data_source,
+            "Last Updated": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FOOTER
+# ═══════════════════════════════════════════════════════════════════════════
+
+st.markdown("---")
+st.markdown(
+    '<p style="text-align: center; color: #90caf9; font-size: 0.9rem;">'
+    '🛍️ Retail AI Analytics Platform | '
+    '🎨 UX Portfolio Project | '
+    f'⏰ {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+    '</p>',
+    unsafe_allow_html=True
+)
